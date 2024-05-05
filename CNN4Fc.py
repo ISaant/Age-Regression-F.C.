@@ -8,7 +8,7 @@ Created on Thu May  2 17:41:57 2024
 
 import numpy as np
 import os
-os.chdir('/home/isaac/Documents/Doctorado_CIC/NewThesis/Python_Fun')
+# os.chdir('/home/isaac/Documents/Doctorado_CIC/NewThesis/Python_Fun')
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 import pickle
