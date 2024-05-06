@@ -8,7 +8,7 @@ Created on Thu May  2 17:41:57 2024
 
 import numpy as np
 import os
-# os.chdir('/home/isaac/Documents/Doctorado_CIC/NewThesis/Python_Fun')
+os.chdir('/home/isaac/Documents/Doctorado_CIC/NewThesis/FunctionalConnectivityRepo')
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 import pickle
@@ -67,9 +67,10 @@ connectome = (connectome/(np.max(connectome, axis=None)))[:,:,:,np.newaxis]
 input_shape = connectome.shape[1:4]
 x_train, x_test, y_train, y_test = train_test_split(connectome, edad, test_size=.2)
 
+#%% training and testing
 
 # Create the model
-model = CNN(input_shape)
+model = ResNet_Sant(input_shape)
 
 # Compile the model
 model.compile(optimizer=Adam(lr=.001), loss='mean_squared_error', metrics=['mae'])

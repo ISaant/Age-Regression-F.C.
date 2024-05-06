@@ -99,8 +99,11 @@ def CNN_Sant(input_shape):
 
 def ResNet_Sant(input_shape):
     inputs = tf.keras.Input(shape=input_shape)
-    base_model = tf.keras.applications.ResNet50(include_top=False, input_tensor=inputs, pooling='avg', weights=None)
-    x = tf.keras.layers.Dense(512, activation='relu')(base_model.output)
+    base_model = tf.keras.applications.ResNet50(include_top=False, input_tensor=inputs, pooling='avg', weights=None)    
+    x = Conv2D(64, (5, 5), strides = (1, 1), activation='relu')(inputs)
+    x = BatchNormalization(axis = 3, name = 'bn0')(x)
+    x = Activation('relu')(x)
+    x = AveragePooling2D((2, 2))(base_model, training=False)
     outputs = tf.keras.layers.Dense(1, activation='linear')(x)
     model = tf.keras.Model(inputs=inputs, outputs=outputs)
     return model
