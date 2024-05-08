@@ -7,6 +7,8 @@ Created on Mon May  6 21:13:36 2024
 """
 
 import argparse
+import os
+import sys
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -17,6 +19,11 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from sklearn.model_selection import train_test_split
+
+# current_path = os.getcwd()
+# parentPath = os.path.abspath(os.path.join(current_path, '../'))
+# setting path
+# sys.path.append(parentPath)
 from my_image_tools import *
 
 def create_df(data_path):
@@ -95,11 +102,11 @@ def main(data_dir, epochs, lr, batch_size, dataset_name, num_channels, greyscale
             layer.trainable = False
 
     # Add custom classification head
-    # x = GlobalAveragePooling2D()(base_model.output) 
-    x = Flatten()(base_model.output) 
+    x = GlobalAveragePooling2D()(base_model.output) 
+    # x = Flatten()(base_model.output) 
     x = Dense(512, activation='relu')(x)
-    x = Dense(256, activation='relu')(x)
-    x = Dense(64, activation='relu')(x)
+    # x = Dense(256, activation='relu')(x)
+    # x = Dense(64, activation='relu')(x)
     predictions = Dense(num_classes, activation='softmax')(x)
 
     # Create model
