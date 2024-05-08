@@ -64,6 +64,7 @@ subjects=scoreDf_noNan['ID']
 connectomes_fc, ROIs = read_Fc(FcFile,path2fc, subjects,thresholding='MST', per=10) #nt = no threshold
 connectome = connectomes_fc['alpha']
 connectome = (connectome/(np.max(connectome, axis=None)))[:,:,:,np.newaxis]
+connectome = np.repeat(connectome,3,-1)
 input_shape = connectome.shape[1:4]
 x_train, x_test, y_train, y_test = train_test_split(connectome, edad, test_size=.2)
 

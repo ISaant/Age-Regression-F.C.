@@ -44,7 +44,12 @@ from tensorflow.keras import Model
 from sklearn import metrics as skmetrics
 from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
-
+from tensorflow.keras.applications import ResNet50, VGG16
+from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Flatten
+from tensorflow.keras.models import Model
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.applications import ResNet50
+from my_image_tools import rgb2gray
 
 #%% ===========================================================================
 def evaluateRegModel(model,x_test,y_test):
@@ -73,6 +78,11 @@ def plotPredictionsReg(predictions,y_test,plot):
         plt.show()
     return pearson[0]
 
+
+#%% 1D to 3D by repeating the matrix
+def gray_to_rgb(img):
+    gray_img = np.expand_dims(rgb2gray(img),axis=-1)
+    return np.repeat(gray_img, 3, 2)
 #%% Modelos Santiago
 
 def CNN_Sant(input_shape):
@@ -97,16 +107,50 @@ def CNN_Sant(input_shape):
     model = tf.keras.Model(inputs=inputs, outputs=outputs)
     return model
 
-def ResNet_Sant(input_shape):
-    inputs = tf.keras.Input(shape=input_shape)
-    base_model = tf.keras.applications.ResNet50(include_top=False, input_tensor=inputs, pooling='avg', weights=None)    
-    x = Conv2D(64, (5, 5), strides = (1, 1), activation='relu')(inputs)
-    x = BatchNormalization(axis = 3, name = 'bn0')(x)
-    x = Activation('relu')(x)
-    x = AveragePooling2D((2, 2))(base_model, training=False)
-    outputs = tf.keras.layers.Dense(1, activation='linear')(x)
-    model = tf.keras.Model(inputs=inputs, outputs=outputs)
-    return model
+def ResNet_Sant(input_shape, freeze=True, pretrained=True):
+     # inputs = tf.keras.Input(shape=input_shape)
+     
+     base_model = ResNet50(weights='imagenet' if pretrained else None, include_top=False, input_shape=input_shape)
+    
+     # Freeze layers if specified
+     if freeze:
+         for layer in base_model.layers:
+             layer.trainable = False
+        
+     # Add custom classification head
+     x = GlobalAveragePooling2D()(base_model.output) 
+     x = Dense(512, activation='relu')(x)
+     x = Dropout(.3)(x)
+     # x = Flatten()(base_model.output) 
+     outputs = tf.keras.layers.Dense(1, activation='linear')(x)
+     model = Model(inputs=base_model.input, outputs=outputs)
+    
+     # Create model
+
+     return model
+
+
+def VGG16_Sant(input_shape, freeze=True, pretrained=True):
+     # inputs = tf.keras.Input(shape=input_shape)
+     
+     base_model = VGG16(weights='imagenet' if pretrained else None, include_top=False, input_shape=input_shape)
+    
+     # Freeze layers if specified
+     if freeze:
+         for layer in base_model.layers:
+             layer.trainable = False
+        
+     # Add custom classification head
+     x = GlobalAveragePooling2D()(base_model.output) 
+     x = Dense(512, activation='relu')(x)
+     x = Dropout(.3)(x)
+     # x = Flatten()(base_model.output) 
+     outputs = tf.keras.layers.Dense(1, activation='linear')(x)
+     model = Model(inputs=base_model.input, outputs=outputs)
+    
+     # Create model
+
+     return model
 
 
 #%% Modelos Diego
