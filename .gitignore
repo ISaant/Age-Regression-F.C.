@@ -1,2 +1,5 @@
 __pycache__/
 scoreDf_spanish.pickle
+tests/Beans/
+test/Beans.zip
+test/__pycache__/
