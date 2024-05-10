@@ -199,3 +199,137 @@ def returnResuduals(df, Variables, model):
         resDf.loc[nanidx, var] = np.nan
         resDf.rename(columns={var: 'res' + var}, inplace=True)
     return resDf
+
+#%% Plot Lasso Coefficients hetmaps
+def Coeff_Heatmaps(Coeffs,nodes=68):
+    fig,(ax1,ax2) = plt.subplots(1,2,sharey=True)
+    mean=np.zeros((nodes,nodes))
+    std=np.zeros((nodes,nodes))
+    
+    mean[np.triu_indices(nodes,1)]=abs(np.mean(Coeffs,axis=0)) #abs for visualization porpouses
+    mean[np.tril_indices(nodes,-1)]=mean.T[np.tril_indices(nodes,-1)]
+    std[np.triu_indices(nodes,1)]=np.std(Coeffs,axis=0)
+    std[np.tril_indices(nodes,-1)]=std.T[np.tril_indices(nodes,-1)]
+    g1 = sns.heatmap(mean,cmap="magma",ax=ax1)
+    g1.set_ylabel('')
+    g1.set_xlabel('')
+    g2 = sns.heatmap(std,cmap="mako",ax=ax2)
+    g2.set_ylabel('')
+    g2.set_xlabel('')
+    return mean
+    
+#%% Single band or multiband?
+
+def Bands2rgb(bands,conn,Norm=True):
+    # if not isinstance(bands,list):
+    #     raise TypeError(f"list expected, got '{type(bands).__name__}', even if its a single band")
+    assert (isinstance(bands,list)),f"list expected, got '{type(bands).__name__}', even if its a single band"
+    assert (len(bands) == 1 or len(bands) == 3), f"list expected to have 1 or 3 values, got '{len(bands)}'"
+    if Norm:
+        for key in conn.keys():
+            conn[key] = conn[key]/(np.max(conn[key], axis=None))
+    if len(bands) == 3:
+        rgb = np.concatenate((conn[bands[0]],conn[bands[1]],conn[bands[2]]),axis=-1)
+        return rgb
+    rgb = np.repeat(conn[bands],3,-1)
+    return rgb
+
+#%%
+def myPCA (DataFrame,verbose,nPca):
+    # scaled_data = preprocessing.scale(DataFrame)
+    scaler = preprocessing.StandardScaler()
+    scaled_data = scaler.fit_transform(DataFrame)
+    pca = PCA() # create a PCA object
+    pca.fit(scaled_data) # do the math
+    pca_data = pca.transform(scaled_data) # get PCA coordinates for scaled_data
+     
+    #########################
+    #
+    # Draw a scree plot and a PCA plot
+    #
+    #########################
+     
+    #The following code constructs the Scree plot
+    per_var = np.round(pca.explained_variance_ratio_* 100, decimals=1)
+    prop_varianza_acum = pca.explained_variance_ratio_.cumsum()
+    labels = ['PC' + str(x) for x in range(1, len(per_var)+1)]
+    
+    #the following code makes a fancy looking plot using PC1 and PC2
+    pca_df = pd.DataFrame(pca_data, columns=labels)
+    pro2use=pca_df.iloc[:,:nPca]
+    if verbose:
+        
+        plt.figure()
+        plt.bar(x=range(1,len(per_var)+1), height=per_var, tick_label=labels)
+        plt.ylabel('Percentage of Explained Variance')
+        plt.xlabel('Principal Component')
+        plt.title('Scree Plot')
+        plt.show()
+        
+        plt.figure()
+        plt.scatter(pca_df.PC1, pca_df.PC2)
+        plt.title('My PCA Graph')
+        plt.xlabel('PC1 - {0}%'.format(per_var[0]))
+        plt.ylabel('PC2 - {0}%'.format(per_var[1]))
+         
+        for sample in pca_df.index:
+            plt.annotate(sample, (pca_df.PC1.loc[sample], pca_df.PC2.loc[sample]))
+        
+        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(6, 4))
+        ax.plot(
+            np.arange(len(labels)) + 1,
+            prop_varianza_acum,
+            marker = 'o'
+        )
+    
+        for x, y in zip(np.arange(len(labels)) + 1, prop_varianza_acum):
+            label = round(y, 2)
+            ax.annotate(
+                label,
+                (x,y),
+                textcoords="offset points",
+                xytext=(0,10),
+                ha='center'
+            )
+            
+        ax.set_ylim(0, 1.1)
+        ax.set_xticks(np.arange(pca.n_components_) + 1)
+        ax.set_title('Percentage of cumulative explained variance')
+        ax.set_xlabel('PCs')
+        ax.set_ylabel('% of cumulative variance');
+        plt.show()
+        
+    return pca_df, pro2use, prop_varianza_acum
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+    

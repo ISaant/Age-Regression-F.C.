@@ -52,29 +52,31 @@ from tensorflow.keras.applications import ResNet50
 from my_image_tools import rgb2gray
 
 #%% ===========================================================================
-def evaluateRegModel(model,x_test,y_test):
+def evaluateRegModel(model,x_test,y_test,verbose=None):
     mse, mae = model.evaluate(x_test, y_test, batch_size = None, verbose=0)
-    print('Loss as Mean squared error from neural net: ', mse)
-    print('Mean absolute error from neural net: ', mae)
+    if verbose:
+        print('Loss as Mean squared error from neural net: ', mse)
+        print('Mean absolute error from neural net: ', mae)
     predictions = model.predict(x_test).flatten()
     return predictions
 
     
 #%% Function to plot predictions
 
-def plotPredictionsReg(predictions,y_test,plot):
+def plotPredictionsReg(predictions,y_test,plot, ax=None):
     pearson=scipy.stats.pearsonr(predictions,y_test)
     if plot :
-        plt.figure()
-        plt.scatter(predictions,y_test)
+        if ax == None:
+            fig,ax=plt.subplots()
+        ax.scatter(predictions,y_test)
         
         # print(pearson)
         lims=[min(y_test)-1,max(y_test)+1]
-        plt.plot(lims,lims)
-        plt.xlabel('predicted')
-        plt.ylabel('ture values')
-        plt.xlim(lims)
-        plt.ylim(lims)
+        ax.plot(lims,lims)
+        ax.set_xlabel('predicted')
+        ax.set_ylabel('true values')
+        ax.set_xlim(lims)
+        ax.set_ylim(lims)
         plt.show()
     return pearson[0]
 
@@ -83,6 +85,17 @@ def plotPredictionsReg(predictions,y_test,plot):
 def gray_to_rgb(img):
     gray_img = np.expand_dims(rgb2gray(img),axis=-1)
     return np.repeat(gray_img, 3, 2)
+
+#%% Lasso
+def Lasso_FC(tt_split,coeffs,ax):
+    x_train, x_test,y_train, y_test = tt_split
+    model = Lasso(alpha=.02,max_iter=10000)
+    model.fit(x_train, y_train)
+    pred_Lasso=model.predict(x_test)
+    lassoPred=plotPredictionsReg(pred_Lasso,y_test,True,ax=ax)
+    if coeffs:
+        return model.coef_, model.intercept_, lassoPred
+    return lassoPred
 #%% Modelos Santiago
 
 def CNN_Sant(input_shape):
@@ -152,8 +165,22 @@ def VGG16_Sant(input_shape, freeze=True, pretrained=True):
 
      return model
 
+def Perceptron_PCA (input_shape):
+    # print(classification)
+    tf.keras.backend.clear_session()
+    inputs = tf.keras.Input(shape=input_shape)
+    x = Dense(512, activation='sigmoid')(inputs)
+    x = Dense(256, activation='relu')(x)
+    x = Dense(64, activation='tanh')(x)
+    x = Dense(16, activation='selu')(x)
+    x = Dense(512, activation='sigmoid')(x)
+    x = Dense(16, activation='gelu')(x)
+    outputs = Dense(1, activation='linear')(x)  # Linear activation for regression
+    model = tf.keras.Model(inputs=inputs, outputs=outputs)
+    return model
 
 #%% Modelos Diego
 
 
 #%% Modelos Carlos
+
