@@ -44,35 +44,58 @@ from tensorflow.keras import Model
 from sklearn import metrics as skmetrics
 from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
-
+from tensorflow.keras.applications import ResNet50, VGG16
+from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Flatten
+from tensorflow.keras.models import Model
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.applications import ResNet50
+from my_image_tools import rgb2gray
 
 #%% ===========================================================================
-def evaluateRegModel(model,x_test,y_test):
+def evaluateRegModel(model,x_test,y_test,verbose=None):
     mse, mae = model.evaluate(x_test, y_test, batch_size = None, verbose=0)
-    print('Loss as Mean squared error from neural net: ', mse)
-    print('Mean absolute error from neural net: ', mae)
+    if verbose:
+        print('Loss as Mean squared error from neural net: ', mse)
+        print('Mean absolute error from neural net: ', mae)
     predictions = model.predict(x_test).flatten()
     return predictions
 
     
 #%% Function to plot predictions
 
-def plotPredictionsReg(predictions,y_test,plot):
+def plotPredictionsReg(predictions,y_test,plot, ax=None):
     pearson=scipy.stats.pearsonr(predictions,y_test)
     if plot :
-        plt.figure()
-        plt.scatter(predictions,y_test)
+        if ax == None:
+            fig,ax=plt.subplots()
+        ax.scatter(predictions,y_test)
         
         # print(pearson)
         lims=[min(y_test)-1,max(y_test)+1]
-        plt.plot(lims,lims)
-        plt.xlabel('predicted')
-        plt.ylabel('ture values')
-        plt.xlim(lims)
-        plt.ylim(lims)
+        ax.plot(lims,lims)
+        ax.set_xlabel('predicted')
+        ax.set_ylabel('true values')
+        ax.set_xlim(lims)
+        ax.set_ylim(lims)
         plt.show()
     return pearson[0]
 
+
+#%% 1D to 3D by repeating the matrix
+def gray_to_rgb(img):
+    gray_img = np.expand_dims(rgb2gray(img),axis=-1)
+    return np.repeat(gray_img, 3, 2)
+
+#%% Lasso
+def Lasso_FC(tt_split,coeffs,ax):
+    x_train, x_test,y_train, y_test = tt_split
+    model = Lasso(alpha=.02,max_iter=10000)
+    model.fit(x_train, y_train)
+    pred_Lasso=model.predict(x_test)
+    lassoPred=plotPredictionsReg(pred_Lasso,y_test,True,ax=ax)
+    if coeffs:
+        return model.coef_, model.intercept_, lassoPred
+    return lassoPred
 #%% Modelos Santiago
 
 def CNN_Sant(input_shape):
@@ -97,19 +120,67 @@ def CNN_Sant(input_shape):
     model = tf.keras.Model(inputs=inputs, outputs=outputs)
     return model
 
-def ResNet_Sant(input_shape):
+def ResNet_Sant(input_shape, freeze=True, pretrained=True):
+     # inputs = tf.keras.Input(shape=input_shape)
+     
+     base_model = ResNet50(weights='imagenet' if pretrained else None, include_top=False, input_shape=input_shape)
+    
+     # Freeze layers if specified
+     if freeze:
+         for layer in base_model.layers:
+             layer.trainable = False
+        
+     # Add custom classification head
+     x = GlobalAveragePooling2D()(base_model.output) 
+     x = Dense(512, activation='relu')(x)
+     x = Dropout(.3)(x)
+     # x = Flatten()(base_model.output) 
+     outputs = tf.keras.layers.Dense(1, activation='linear')(x)
+     model = Model(inputs=base_model.input, outputs=outputs)
+    
+     # Create model
+
+     return model
+
+
+def VGG16_Sant(input_shape, freeze=True, pretrained=True):
+     # inputs = tf.keras.Input(shape=input_shape)
+     
+     base_model = VGG16(weights='imagenet' if pretrained else None, include_top=False, input_shape=input_shape)
+    
+     # Freeze layers if specified
+     if freeze:
+         for layer in base_model.layers:
+             layer.trainable = False
+        
+     # Add custom classification head
+     x = GlobalAveragePooling2D()(base_model.output) 
+     x = Dense(512, activation='relu')(x)
+     x = Dropout(.3)(x)
+     # x = Flatten()(base_model.output) 
+     outputs = tf.keras.layers.Dense(1, activation='linear')(x)
+     model = Model(inputs=base_model.input, outputs=outputs)
+    
+     # Create model
+
+     return model
+
+def Perceptron_PCA (input_shape):
+    # print(classification)
+    tf.keras.backend.clear_session()
     inputs = tf.keras.Input(shape=input_shape)
-    base_model = tf.keras.applications.ResNet50(include_top=False, input_tensor=inputs, pooling='avg', weights=None)    
-    x = Conv2D(64, (5, 5), strides = (1, 1), activation='relu')(inputs)
-    x = BatchNormalization(axis = 3, name = 'bn0')(x)
-    x = Activation('relu')(x)
-    x = AveragePooling2D((2, 2))(base_model, training=False)
-    outputs = tf.keras.layers.Dense(1, activation='linear')(x)
+    x = Dense(512, activation='sigmoid')(inputs)
+    x = Dense(256, activation='relu')(x)
+    x = Dense(64, activation='tanh')(x)
+    x = Dense(16, activation='selu')(x)
+    x = Dense(512, activation='sigmoid')(x)
+    x = Dense(16, activation='gelu')(x)
+    outputs = Dense(1, activation='linear')(x)  # Linear activation for regression
     model = tf.keras.Model(inputs=inputs, outputs=outputs)
     return model
-
 
 #%% Modelos Diego
 
 
 #%% Modelos Carlos
+
