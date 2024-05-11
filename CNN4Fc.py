@@ -14,7 +14,6 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 import pickle
 from Fun4CNNFc import *
 from read_Fc import read_Fc
-from read_Sc import read_Sc
 from Fun4RegCNN import *
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm 
@@ -29,11 +28,8 @@ scores = []
 current_path = os.getcwd()
 parentPath = os.path.abspath(os.path.join(current_path, '../../'))
 path2fc = parentPath+'/NewThesis_db_DK/camcan_AEC_ortho_AnteroPosterior'
-# path2fc = parentPath+'/NewThesis_db_DK/camcan_AEC_ortho_YEO' #no pelen esto, es otra forma de organizar las matrices segun YEO (sí, es chino)
-path2sc = parentPath+'/NewThesis_db_s200/msmtconnectome'
 path2demo = parentPath+'/NewThesis_db_DK/camcan_demographics/'
 FcFile = np.sort(os.listdir(path2fc))
-ScFile = np.sort(os.listdir(path2sc))
 demoFile = np.sort(os.listdir(path2demo))
 
 #%% Find nan values in the score dataframe
@@ -135,21 +131,21 @@ plt.legend()
 
 #seleccionamos el # de PCAs de cada banda (100,120,160)
 nonzero_index=np.nonzero(coeffsMasks[0])
-alpha_weigths = connectomes_fc['delta'][:,nonzero_index[0],nonzero_index[1],0]
-pca_df, pca_d, prop_varianza_acum = myPCA(alpha_weigths, False, 100)
-nonzero_index=np.nonzero(coeffsMasks[1])
+delta_weigths = connectomes_fc['delta'][:,nonzero_index[0],nonzero_index[1],0]
+pca_df, pca_d, prop_varianza_acum = myPCA(delta_weigths, False, 100)
+nonzero_index=np.nonzero(coeffsMasks[2])
 alpha_weigths = connectomes_fc['alpha'][:,nonzero_index[0],nonzero_index[1],0]
 pca_df, pca_a, prop_varianza_acum = myPCA(alpha_weigths, False, 120)
 nonzero_index=np.nonzero(coeffsMasks[3])
-alpha_weigths = connectomes_fc['beta'][:,nonzero_index[0],nonzero_index[1],0]
-pca_df, pca_b, prop_varianza_acum = myPCA(alpha_weigths, False, 160)
+beta_weigths = connectomes_fc['beta'][:,nonzero_index[0],nonzero_index[1],0]
+pca_df, pca_b, prop_varianza_acum = myPCA(beta_weigths, False, 160)
 
 features= np.concatenate((np.array(pca_d),np.array(pca_a),np.array(pca_b)),axis=1) #concatenamos los pca
 x_train, x_test, y_train,y_test=train_test_split(features,edad,test_size=.2,random_state=726) #separamos en train-test
 input_shape=x_train.shape[1]
 # anatPCA[:, :, roi] = np.array(pca2use)
 
-#Yaaaaa estoy ya lo conocen
+#Yaaaaa esto ya lo conocen
 model = Perceptron_PCA(input_shape)
 
 # Compile the model
