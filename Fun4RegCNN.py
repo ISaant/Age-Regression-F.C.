@@ -64,7 +64,9 @@ def evaluateRegModel(model,x_test,y_test,verbose=None):
 #%% Function to plot predictions
 
 def plotPredictionsReg(predictions,y_test,plot, ax=None):
-    pearson=scipy.stats.pearsonr(predictions,y_test)
+    print(predictions[0:5])
+    ## pearson=scipy.stats.pearsonr(predictions,y_test)
+    pearson=scipy.stats.pearsonr(predictions,y_test[:,0])
     if plot :
         if ax == None:
             fig,ax=plt.subplots()
@@ -180,7 +182,68 @@ def Perceptron_PCA (input_shape):
     return model
 
 #%% Modelos Diego
+def CNN_Diego(input_shape):
+    leaky_relu = LeakyReLU(alpha=0.01)
+    inputs = tf.keras.Input(shape=input_shape)
+    x = Conv2D(128, (7, 7), strides = (2, 2), activation='relu')(inputs)
+    x = BatchNormalization(axis = 3, name = 'bn0')(x)
+    x = Activation(leaky_relu)(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Conv2D(256, (5, 5), activation=leaky_relu)(x)
+    x = BatchNormalization(axis = 3, name = 'bn1')(x)
+    x = Activation(leaky_relu)(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Conv2D(512, (3, 3), activation='relu')(x)
+    # x = BatchNormalization(axis = 3, name = 'bn2')(x)
+    # x = Activation('relu')(x)
+    x = Flatten()(x)
+    x = Dense(512, activation='relu')(x)
+    x = Dense(256, activation=leaky_relu)(x)
+    x = Dense(128, activation=leaky_relu)(x)
+    x = Dense(64, activation='relu')(x)
+    x = Dense(32, activation='sigmoid')(x)
+    outputs = Dense(1, activation='linear')(x)  # Linear activation for regression
+    model = tf.keras.Model(inputs=inputs, outputs=outputs)
+    return model
+
+def Transf_Diego(input_shape):
+    inputs = tf.keras.Input(shape=input_shape)
+    base_model = tf.keras.applications.EfficientNetV2S(include_top=False, input_tensor=inputs, pooling='avg', weights=None)
+    x = tf.keras.layers.Dense(512, activation='relu')(base_model.output)
+    outputs = tf.keras.layers.Dense(1, activation='linear')(x)
+    model = tf.keras.Model(inputs=inputs, outputs=outputs)
+    return model
 
 
 #%% Modelos Carlos
+def CNN_Carl(input_shape):
+    leaky_relu = LeakyReLU(alpha=0.01)
+    inputs = tf.keras.Input(shape=input_shape)
+    x = Conv2D(128, (7, 7), strides = (2, 2), activation=leaky_relu)(inputs)
+    x = BatchNormalization(axis = 3, name = 'bn0')(x)
+    x = Activation(leaky_relu)(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Conv2D(256, (5, 5), activation=leaky_relu)(x)
+    x = BatchNormalization(axis = 3, name = 'bn1')(x)
+    x = Activation(leaky_relu)(x)
+    x = MaxPooling2D((2, 2))(x)
+    x = Conv2D(512, (2, 2), activation='relu')(x)
+    # x = BatchNormalization(axis = 3, name = 'bn2')(x)
+    # x = Activation('relu')(x)
+    x = Flatten()(x)
+    x = Dense(512, activation=leaky_relu)(x)
+    x = Dense(256, activation=leaky_relu)(x)
+    x = Dense(128, activation=leaky_relu)(x)
+    x = Dense(64, activation=leaky_relu)(x)
+    x = Dense(32, activation=leaky_relu)(x)
+    outputs = Dense(1, activation='linear')(x)  # Linear activation for regression
+    model = tf.keras.Model(inputs=inputs, outputs=outputs)
+    return model
 
+def Transf_Carl(input_shape):
+    inputs = tf.keras.Input(shape=input_shape)
+    base_model = tf.keras.applications.EfficientNetV2S(include_top=False, input_tensor=inputs, pooling='avg', weights=None)
+    x = tf.keras.layers.Dense(512, activation='relu')(base_model.output)
+    outputs = tf.keras.layers.Dense(1, activation='linear')(x)
+    model = tf.keras.Model(inputs=inputs, outputs=outputs)
+    return model
